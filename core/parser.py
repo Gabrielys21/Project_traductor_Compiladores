@@ -101,10 +101,11 @@ class Parser:
                           NUMERAL_ORD | CONTRACCION
     """
 
-    def __init__(self) -> None:
-        self._tokens:  list[Token] = []
-        self._pos:     int = 0
-        self._errores: list[CompilerError] = []
+    def __init__(self, error_table: ErrorTable | None = None) -> None:
+        self._tokens:      list[Token] = []
+        self._pos:         int = 0
+        self._errores:     list[CompilerError] = []
+        self._error_table: ErrorTable | None = error_table
 
     # ── Acceso al flujo de tokens ────────────────────────────────────────────
 
@@ -127,13 +128,17 @@ class Parser:
 
     def _registrar_error(self, descripcion: str, sugerencia: str = '') -> None:
         tok = self._actual()
-        self._errores.append(CompilerError(
+        error = CompilerError(
             tipo=ErrorTipo.SINTACTICO,
             posicion=tok.posicion,
             palabra=tok.valor,
             descripcion=descripcion,
             sugerencia=sugerencia,
-        ))
+        )
+        self._errores.append(error)
+        # Propagar a la ErrorTable global si se proporcionó una
+        if self._error_table is not None:
+            self._error_table.agregar(error)
 
     # ── Punto de entrada ─────────────────────────────────────────────────────
 

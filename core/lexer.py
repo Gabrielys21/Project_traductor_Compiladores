@@ -73,6 +73,10 @@ class Lexer:
         tokens, errores = lexer.analizar("The dog runs fast.")
     """
 
+    def __init__(self) -> None:
+        # Idioma detectado en la última llamada a analizar(); accesible externamente
+        self.idioma: str = 'EN'
+
     def analizar(self, texto: str) -> tuple[list[Token], list[CompilerError]]:
         """
         Realiza el análisis léxico completo del texto.
@@ -92,6 +96,7 @@ class Lexer:
             return [Token(TokenType.EOF, '', 0)], []
 
         idioma: str = detectar_idioma(texto)
+        self.idioma = idioma   # persiste tras analizar() para uso externo
         lexicon: dict[str, TokenType] = LEXICON_EN if idioma == 'EN' else LEXICON_ES
 
         tokens: list[Token] = []

@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compilador Traductor EN ↔ ES</title>
+  <style>
+    /* ── Variables y reset ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:        #1a73e8;
+      --blue-dark:   #1557b0;
+      --blue-light:  #e8f0fe;
+      --blue-bg:     #f0f4ff;
+      --white:       #ffffff;
+      --bg:          #f8f9fa;
+      --border:      #dadce0;
+      --text:        #202124;
+      --muted:       #5f6368;
+      --red:         #d93025;
+      --red-bg:      #fce8e6;
+      --green:       #188038;
+      --green-bg:    #e6f4ea;
+      --orange:      #e37400;
+      --orange-bg:   #fef3e2;
+      --purple:      #7b1fa2;
+      --purple-bg:   #f3e5f5;
+      --radius:      8px;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+      --shadow-md:   0 4px 12px rgba(0,0,0,.10);
+      --transition:  .18s ease;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────────────────── */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--blue);
+      letter-spacing: -.2px;
+    }
+    .brand-icon { font-size: 26px; }
+
+    /* Toggle de dirección EN→ES / ES→EN */
+    .dir-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .dir-btn {
+      padding: 6px 18px;
+      border: none;
+      background: transparent;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .dir-btn.active {
+      background: var(--white);
+      color: var(--blue);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ── WRAPPER CENTRAL ─────────────────────────────────────────────── */
+    .page-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 24px 0;
+    }
+
+    /* ── CAJA PRINCIPAL ─────────────────────────────────────────────── */
+    .translator-box {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      min-height: 280px;
+    }
+
+    /* Cabecera de panel con nombre de idioma */
+    .panel-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      min-height: 46px;
+    }
+
+    /* ── PANEL IZQUIERDO ─────────────────────────────────────────────── */
+    .panel-left  { display: flex; flex-direction: column; }
+
+    #input-text {
+      flex: 1;
+      width: 100%;
+      min-height: 200px;
+      padding: 16px;
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: 18px;
+      color: var(--text);
+      font-family: inherit;
+      line-height: 1.65;
+      background: var(--white);
+    }
+    #input-text::placeholder { color: #bdc1c6; }
+
+    .panel-footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Botones */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .btn-primary  { background: var(--blue); color: var(--white); }
+    .btn-primary:hover:not(:disabled)  { background: var(--blue-dark); }
+    .btn-primary:disabled { background: #a8c7fa; cursor: not-allowed; }
+    .btn-outline  { background: var(--white); color: var(--blue); border: 1px solid var(--blue); }
+    .btn-outline:hover  { background: var(--blue-light); }
+    .btn-ghost   { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px 8px; border-radius: 4px; font-size: 13px; }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+    #file-input { display: none; }
+
+    .char-counter {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .char-counter.warn { color: var(--red); font-weight: 600; }
+
+    /* ── DIVISOR CENTRAL CON BOTÓN SWAP ──────────────────────────────── */
+    .divider {
+      border-left: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      position: relative;
+    }
+    .swap-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--blue);
+      transition: all var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .swap-btn:hover { background: var(--blue-light); transform: rotate(180deg); }
+
+    /* ── PANEL DERECHO ───────────────────────────────────────────────── */
+    .panel-right { display: flex; flex-direction: column; }
+
+    #output-area {
+      flex: 1;
+      padding: 16px;
+      font-size: 18px;
+      line-height: 1.65;
+      color: var(--text);
+      min-height: 200px;
+      overflow-y: auto;
+      word-break: break-word;
+    }
+
+    .placeholder-text { color: #bdc1c6; font-style: italic; }
+
+    /* Errores inline en el panel derecho */
+    .err-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .err-card {
+      background: var(--red-bg);
+      border-left: 3px solid var(--red);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .err-card-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: var(--red);
+      margin-bottom: 2px;
+    }
+    .err-card-desc { color: var(--text); font-size: 13px; }
+    .err-card-sug  { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+    /* ── SECCIÓN DE ANÁLISIS ─────────────────────────────────────────── */
+    .analysis-wrap {
+      max-width: 1280px;
+      margin: 20px auto 48px;
+      padding: 0 24px;
+    }
+
+    .tabs-bar {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+    }
+    .tab-btn {
+      padding: 11px 22px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-btn:hover  { color: var(--blue); }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 19px;
+      height: 19px;
+      padding: 0 5px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .badge-blue  { background: var(--blue);  color: var(--white); }
+    .badge-red   { background: var(--red);   color: var(--white); }
+    .badge-hide  { display: none !important; }
+
+    .tab-panel {
+      display: none;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .tab-panel.active { display: block; }
+
+    .tab-empty {
+      padding: 36px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .tab-empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+
+    /* Tablas */
+    .tbl-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--bg);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #f1f3f4;
+      vertical-align: top;
+    }
+    tbody tr:hover td { background: #f8fafe; }
+    tbody tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 12px;
+      background: var(--bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Pill-badges para columnas */
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      white-space: nowrap;
+    }
+    .pill-lex  { background: var(--blue-light); color: #1565c0; }
+    .pill-sint { background: var(--orange-bg);  color: var(--orange); }
+    .pill-sem  { background: var(--purple-bg);  color: var(--purple); }
+    .pill-ok   { background: var(--green-bg);   color: var(--green); }
+    .pill-err  { background: var(--red-bg);     color: var(--red); }
+    .pill-en   { background: var(--blue-light); color: #1565c0; }
+    .pill-es   { background: var(--purple-bg);  color: var(--purple); }
+    .pill-cfg  { background: #fff3e0;           color: #e65100; }
+
+    /* ── SPINNER ─────────────────────────────────────────────────────── */
+    .spinner-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(3px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      gap: 16px;
+    }
+    .spinner-overlay.hidden { display: none; }
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border: 4px solid var(--blue-light);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    .spinner-label { font-size: 14px; color: var(--muted); font-weight: 500; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSIVE ──────────────────────────────────────────────────── */
+    @media (max-width: 720px) {
+      .translator-box {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1px auto;
+      }
+      .divider {
+        height: 1px;
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+      .swap-btn { display: none; }
+      .dir-toggle { display: none; }
+      .brand { font-size: 16px; }
+      .page-wrap, .analysis-wrap { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="brand">
+    <span class="brand-icon">🌐</span>
+    Compilador Traductor
+  </div>
+
+  <div class="dir-toggle" id="dir-toggle">
+    <button class="dir-btn active" id="btn-en-es" onclick="setDir('EN')">EN → ES</button>
+    <button class="dir-btn"        id="btn-es-en" onclick="setDir('ES')">ES → EN</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ TRADUCTOR -->
+<div class="page-wrap">
+  <div class="translator-box">
+
+    <!-- Panel izquierdo: entrada -->
+    <div class="panel-left">
+      <div class="panel-head" id="lbl-src">Inglés</div>
+      <textarea
+        id="input-text"
+        maxlength="1000"
+        placeholder="Escribe o pega el texto aquí…"
+        spellcheck="false"
+        oninput="onInput()"
+      ></textarea>
+      <div class="panel-footer">
+        <button class="btn btn-primary" id="btn-translate" onclick="traducir()">
+          ▶ Traducir
+        </button>
+        <label class="btn btn-outline" for="file-input" style="cursor:pointer">
+          📄 Cargar .txt
+        </label>
+        <input type="file" id="file-input" accept=".txt" onchange="cargarArchivo(event)">
+        <button class="btn-ghost" onclick="limpiarTodo()" title="Limpiar">✕ Limpiar</button>
+        <span class="char-counter" id="char-counter">0 / 1000</span>
+      </div>
+    </div>
+
+    <!-- Divisor con botón swap -->
+    <div class="divider">
+      <button class="swap-btn" title="Invertir idiomas" onclick="swapDir()">⇄</button>
+    </div>
+
+    <!-- Panel derecho: salida -->
+    <div class="panel-right">
+      <div class="panel-head" id="lbl-dst">Español</div>
+      <div id="output-area">
+        <span class="placeholder-text">La traducción aparecerá aquí…</span>
+      </div>
+    </div>
+
+  </div><!-- /translator-box -->
+</div><!-- /page-wrap -->
+
+<!-- ══════════════════════════════════════════════════════ ANÁLISIS -->
+<div class="analysis-wrap">
+
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tbtn-sim" onclick="showTab('sim')">
+      Tabla de símbolos
+      <span class="badge badge-blue badge-hide" id="bdg-sim">0</span>
+    </button>
+    <button class="tab-btn" id="tbtn-err" onclick="showTab('err')">
+      Tabla de errores
+      <span class="badge badge-red badge-hide" id="bdg-err">0</span>
+    </button>
+  </div>
+
+  <!-- Tab: símbolos -->
+  <div class="tab-panel active" id="tpanel-sim">
+    <div class="tab-empty" id="sim-empty">
+      <span class="tab-empty-icon">🔤</span>
+      Realiza una traducción para ver el análisis léxico.
+    </div>
+    <div class="tbl-scroll" id="sim-wrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Pos</th><th>Valor</th><th>Tipo</th>
+            <th>Categoría</th><th>Idioma</th><th>Error</th>
+          </tr>
+        </thead>
+        <tbody id="sim-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab: errores -->
+  <div class="tab-panel" id="tpanel-err">
+    <div class="tab-empty" id="err-empty">
+      <span class="tab-empty-icon">✅</span>
+      No se encontraron errores.
+    </div>
+    <div class="tbl-scroll" id="err-wrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Tipo</th><th>Pos</th><th>Palabra</th>
+            <th>Descripción</th><th>Sugerencia</th>
+          </tr>
+        </thead>
+        <tbody id="err-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /analysis-wrap -->
+
+<!-- ══════════════════════════════════════════════════════ SPINNER -->
+<div class="spinner-overlay hidden" id="spinner">
+  <div class="spinner"></div>
+  <span class="spinner-label">Traduciendo…</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPT -->
+<script>
+/* ── Estado ─────────────────────────────────────────────────────── */
+const LANG = {
+  EN: 'Inglés',
+  ES: 'Español',
+};
+let dirActual = 'EN'; // fuente actual
+
+/* ── Dirección de traducción ───────────────────────────────────── */
+function setDir(dir) {
+  dirActual = dir;
+  document.getElementById('btn-en-es').classList.toggle('active', dir === 'EN');
+  document.getElementById('btn-es-en').classList.toggle('active', dir === 'ES');
+  document.getElementById('lbl-src').textContent = dir === 'EN' ? LANG.EN : LANG.ES;
+  document.getElementById('lbl-dst').textContent = dir === 'EN' ? LANG.ES : LANG.EN;
+}
+
+function swapDir() {
+  const nuevoDir = dirActual === 'EN' ? 'ES' : 'EN';
+  // Si hay traducción activa, moverla al textarea
+  const outEl = document.getElementById('output-area');
+  const textoTrad = outEl.dataset.translation || '';
+  if (textoTrad) {
+    document.getElementById('input-text').value = textoTrad;
+    onInput();
+    resetOutput();
+  }
+  setDir(nuevoDir);
+}
+
+/* ── Input / contador ──────────────────────────────────────────── */
+function onInput() {
+  const n   = document.getElementById('input-text').value.length;
+  const el  = document.getElementById('char-counter');
+  el.textContent = `${n} / 1000`;
+  el.classList.toggle('warn', n > 900);
+}
+
+/* ── Cargar archivo .txt ───────────────────────────────────────── */
+function cargarArchivo(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('input-text').value = ev.target.result.slice(0, 1000);
+    onInput();
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+}
+
+/* ── Spinner ───────────────────────────────────────────────────── */
+function setSpinner(show) {
+  document.getElementById('spinner').classList.toggle('hidden', !show);
+  document.getElementById('btn-translate').disabled = show;
+}
+
+/* ── Reset salida ──────────────────────────────────────────────── */
+function resetOutput() {
+  const el = document.getElementById('output-area');
+  el.innerHTML = '<span class="placeholder-text">La traducción aparecerá aquí…</span>';
+  el.dataset.translation = '';
+}
+
+function limpiarTodo() {
+  document.getElementById('input-text').value = '';
+  onInput();
+  resetOutput();
+  renderSimbolos([]);
+  renderErrores([]);
+}
+
+/* ── TRADUCIR ──────────────────────────────────────────────────── */
+async function traducir() {
+  const texto = document.getElementById('input-text').value.trim();
+  if (!texto) {
+    showOutputError([{
+      tipo: 'INPUT',
+      descripcion: 'El campo de texto está vacío.',
+      sugerencia: 'Escribe o pega una oración para traducir.',
+    }]);
+    return;
+  }
+
+  setSpinner(true);
+  resetOutput();
+
+  try {
+    const res  = await fetch('/traducir', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ texto }),
+    });
+    const data = await res.json();
+    handleResponse(data);
+  } catch (err) {
+    showOutputError([{
+      tipo: 'RED',
+      descripcion: `Error de conexión: ${err.message}`,
+      sugerencia: 'Verifica que el servidor Flask esté en ejecución.',
+    }]);
+  } finally {
+    setSpinner(false);
+  }
+}
+
+/* ── Procesar respuesta ────────────────────────────────────────── */
+function handleResponse(data) {
+  renderSimbolos(data.tabla_simbolos || []);
+
+  if (data.exito) {
+    // Mostrar traducción
+    const out = document.getElementById('output-area');
+    out.textContent = data.traduccion;
+    out.dataset.translation = data.traduccion;
+
+    // Actualizar etiquetas con idioma real detectado
+    if (data.idioma_origen) {
+      const src = data.idioma_origen;
+      const dst = src === 'EN' ? 'ES' : 'EN';
+      document.getElementById('lbl-src').textContent = LANG[src] || src;
+      document.getElementById('lbl-dst').textContent = LANG[dst] || dst;
+    }
+
+    renderErrores([]);
+    showTab('sim');
+  } else {
+    showOutputError(data.errores || []);
+    renderErrores(data.errores || []);
+    if ((data.errores || []).length > 0) showTab('err');
+  }
+}
+
+/* ── Errores en panel derecho ──────────────────────────────────── */
+function showOutputError(errores) {
+  if (!errores.length) {
+    resetOutput();
+    return;
+  }
+  let html = '<ul class="err-list">';
+  errores.forEach(e => {
+    html += `
+      <li class="err-card">
+        <div class="err-card-head">${pillTipo(e.tipo)} ${esc(e.tipo)}</div>
+        <div class="err-card-desc">${esc(e.descripcion || '')}</div>
+        ${e.sugerencia ? `<div class="err-card-sug">💡 ${esc(e.sugerencia)}</div>` : ''}
+      </li>`;
+  });
+  html += '</ul>';
+  const out = document.getElementById('output-area');
+  out.innerHTML = html;
+  out.dataset.translation = '';
+}
+
+/* ── Render tabla de símbolos ──────────────────────────────────── */
+function renderSimbolos(items) {
+  const tbody = document.getElementById('sim-tbody');
+  tbody.innerHTML = '';
+  setBadge('sim', items.length);
+
+  const empty = document.getElementById('sim-empty');
+  const wrap  = document.getElementById('sim-wrap');
+
+  if (!items.length) {
+    empty.style.display = '';
+    wrap.style.display  = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display  = '';
+
+  items.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td><code>${s.posicion}</code></td>
+      <td><strong>${esc(s.valor)}</strong></td>
+      <td><code>${esc(s.tipo)}</code></td>
+      <td>${esc(s.categoria || '')}</td>
+      <td><span class="pill ${s.idioma === 'EN' ? 'pill-en' : 'pill-es'}">${esc(s.idioma)}</span></td>
+      <td>${s.tiene_error
+            ? '<span class="pill pill-err">⚠ sí</span>'
+            : '<span class="pill pill-ok">✓ no</span>'}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── Render tabla de errores ───────────────────────────────────── */
+function renderErrores(items) {
+  const tbody = document.getElementById('err-tbody');
+  tbody.innerHTML = '';
+  setBadge('err', items.length);
+
+  const empty = document.getElementById('err-empty');
+  const wrap  = document.getElementById('err-wrap');
+
+  if (!items.length) {
+    empty.style.display = '';
+    wrap.style.display  = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display  = '';
+
+  items.forEach((e, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${pillTipo(e.tipo)}</td>
+      <td><code>${e.posicion ?? ''}</code></td>
+      <td><code>${esc(e.palabra || '')}</code></td>
+      <td>${esc(e.descripcion || '')}</td>
+      <td style="color:var(--muted);font-size:12px">${esc(e.sugerencia || '')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────── */
+function showTab(tab) {
+  ['sim', 'err'].forEach(t => {
+    document.getElementById(`tbtn-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`tpanel-${t}`).classList.toggle('active', t === tab);
+  });
+}
+
+function setBadge(tab, n) {
+  const el = document.getElementById(`bdg-${tab}`);
+  el.textContent = n;
+  el.classList.toggle('badge-hide', n === 0);
+}
+
+/* ── Pill por tipo de error ────────────────────────────────────── */
+function pillTipo(tipo) {
+  const map = {
+    LEXICO:    'pill-lex',
+    SINTACTICO:'pill-sint',
+    SEMANTICO: 'pill-sem',
+    INPUT:     'pill-err',
+    CONFIG:    'pill-cfg',
+    RED:       'pill-err',
+  };
+  return `<span class="pill ${map[tipo] || 'pill-err'}">${esc(tipo)}</span>`;
+}
+
+/* ── Escape HTML ───────────────────────────────────────────────── */
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Atajos de teclado ─────────────────────────────────────────── */
+document.getElementById('input-text').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); traducir(); }
+});
+</script>
+</body>
+</html>
