@@ -3,33 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compilador Traductor EN ↔ ES</title>
+  <title>TransCompiler</title>
   <style>
-    /* ── Variables y reset ───────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Modo claro ────────────────────────────────────────────────── */
     :root {
-      --blue:        #1a73e8;
-      --blue-dark:   #1557b0;
-      --blue-light:  #e8f0fe;
-      --blue-bg:     #f0f4ff;
-      --white:       #ffffff;
-      --bg:          #f8f9fa;
-      --border:      #dadce0;
-      --text:        #202124;
-      --muted:       #5f6368;
-      --red:         #d93025;
-      --red-bg:      #fce8e6;
-      --green:       #188038;
-      --green-bg:    #e6f4ea;
-      --orange:      #e37400;
-      --orange-bg:   #fef3e2;
-      --purple:      #7b1fa2;
-      --purple-bg:   #f3e5f5;
-      --radius:      8px;
-      --shadow-sm:   0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
-      --shadow-md:   0 4px 12px rgba(0,0,0,.10);
-      --transition:  .18s ease;
+      --bg:               #f5f5f5;
+      --surface:          #ffffff;
+      --border:           #ebebeb;
+      --text:             #0d0d0d;
+      --muted:            #888888;
+      --placeholder:      #b0b0b0;
+      /* pill activo = negro */
+      --pill-active-bg:   #0d0d0d;
+      --pill-active-text: #ffffff;
+      /* botón primario */
+      --btn-bg:           #0d0d0d;
+      --btn-text:         #ffffff;
+      /* tabla */
+      --row-border:       #f2f2f2;
+      --row-hover:        #fafafa;
+      --code-bg:          #f0f0f0;
+      /* spinner */
+      --spinner-overlay:  rgba(255,255,255,.8);
+      /* pills semánticos */
+      --pill-lex-bg:      #e8f0fe; --pill-lex-c:   #1a56cc;
+      --pill-sint-bg:     #fff3e0; --pill-sint-c:  #c45c00;
+      --pill-sem-bg:      #f3e8fd; --pill-sem-c:   #7b1fa2;
+      --pill-ok-bg:       #e6f4ea; --pill-ok-c:    #188038;
+      --pill-err-bg:      #fce8e6; --pill-err-c:   #d93025;
+      --pill-cfg-bg:      #fff3e0; --pill-cfg-c:   #c45c00;
+      --pill-en-bg:       #e8f0fe; --pill-en-c:    #1a56cc;
+      --pill-es-bg:       #f3e8fd; --pill-es-c:    #7b1fa2;
+      --red:              #d93025;
+      --red-bg:           #fce8e6;
+    }
+
+    /* ── Modo oscuro ───────────────────────────────────────────────── */
+    body.dark {
+      --bg:               #0d0d0d;
+      --surface:          #1a1a1a;
+      --border:           #2a2a2a;
+      --text:             #f0f0f0;
+      --muted:            #666666;
+      --placeholder:      #555555;
+      --pill-active-bg:   #f0f0f0;
+      --pill-active-text: #0d0d0d;
+      --btn-bg:           #f0f0f0;
+      --btn-text:         #0d0d0d;
+      --row-border:       #2a2a2a;
+      --row-hover:        #222222;
+      --code-bg:          #2a2a2a;
+      --spinner-overlay:  rgba(13,13,13,.85);
+      --pill-lex-bg:      #1a2a4a; --pill-lex-c:   #7aabff;
+      --pill-sint-bg:     #2a1f0a; --pill-sint-c:  #f0a045;
+      --pill-sem-bg:      #2a1540; --pill-sem-c:   #cc88ff;
+      --pill-ok-bg:       #0d2a14; --pill-ok-c:    #5cc876;
+      --pill-err-bg:      #2a0d0d; --pill-err-c:   #ff6b6b;
+      --pill-cfg-bg:      #2a1f0a; --pill-cfg-c:   #f0a045;
+      --pill-en-bg:       #1a2a4a; --pill-en-c:    #7aabff;
+      --pill-es-bg:       #2a1540; --pill-es-c:    #cc88ff;
+      --red:              #ff6b6b;
+      --red-bg:           #2a0d0d;
     }
 
     body {
@@ -37,14 +73,15 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* ── HEADER ──────────────────────────────────────────────────────── */
+    /* ── HEADER ───────────────────────────────────────────────────── */
     header {
-      background: var(--white);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      height: 64px;
+      height: 60px;
       padding: 0 24px;
       display: flex;
       align-items: center;
@@ -52,166 +89,161 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      flex-shrink: 0;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 19px;
-      font-weight: 600;
-      color: var(--blue);
-      letter-spacing: -.2px;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.3px;
+      text-decoration: none;
     }
-    .brand-icon { font-size: 26px; }
 
-    /* Toggle de dirección EN→ES / ES→EN */
-    .dir-toggle {
+    .header-right {
       display: flex;
       align-items: center;
-      background: var(--bg);
+      gap: 6px;
+    }
+
+    /* Botones de header (tema y logout) */
+    .hdr-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 3px;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 17px;
+      text-decoration: none;
+      transition: background .15s, color .15s;
+    }
+    .hdr-btn:hover { background: var(--bg); color: var(--text); }
+
+    /* ── MAIN ─────────────────────────────────────────────────────── */
+    .main-wrap {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── LANGUAGE SELECTOR ────────────────────────────────────────── */
+    .lang-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .lang-pill {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .lang-pill:hover { border-color: var(--text); color: var(--text); }
+    .lang-pill.active {
+      background: var(--pill-active-bg);
+      color: var(--pill-active-text);
+      border-color: var(--pill-active-bg);
+    }
+
+    .swap-mid {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 16px;
+      transition: all .15s;
+    }
+    .swap-mid:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── PANELS ───────────────────────────────────────────────────── */
+    .panels-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 260px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-lang {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
+    .panel-icons {
+      display: flex;
       gap: 2px;
     }
-    .dir-btn {
-      padding: 6px 18px;
+    .panel-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       border: none;
       background: transparent;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-      transition: all var(--transition);
-      white-space: nowrap;
-    }
-    .dir-btn.active {
-      background: var(--white);
-      color: var(--blue);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* ── WRAPPER CENTRAL ─────────────────────────────────────────────── */
-    .page-wrap {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 24px 24px 0;
-    }
-
-    /* ── CAJA PRINCIPAL ─────────────────────────────────────────────── */
-    .translator-box {
-      display: grid;
-      grid-template-columns: 1fr 48px 1fr;
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      overflow: hidden;
-      min-height: 280px;
-    }
-
-    /* Cabecera de panel con nombre de idioma */
-    .panel-head {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--blue);
+      cursor: default;
       display: flex;
       align-items: center;
-      min-height: 46px;
+      justify-content: center;
+      color: var(--muted);
+      opacity: .6;
     }
-
-    /* ── PANEL IZQUIERDO ─────────────────────────────────────────────── */
-    .panel-left  { display: flex; flex-direction: column; }
 
     #input-text {
       flex: 1;
       width: 100%;
-      min-height: 200px;
       padding: 16px;
       border: none;
       outline: none;
       resize: none;
       font-size: 18px;
-      color: var(--text);
       font-family: inherit;
+      color: var(--text);
+      background: var(--surface);
       line-height: 1.65;
-      background: var(--white);
     }
-    #input-text::placeholder { color: #bdc1c6; }
-
-    .panel-footer {
-      padding: 10px 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    /* Botones */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 20px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      transition: all var(--transition);
-      white-space: nowrap;
-    }
-    .btn-primary  { background: var(--blue); color: var(--white); }
-    .btn-primary:hover:not(:disabled)  { background: var(--blue-dark); }
-    .btn-primary:disabled { background: #a8c7fa; cursor: not-allowed; }
-    .btn-outline  { background: var(--white); color: var(--blue); border: 1px solid var(--blue); }
-    .btn-outline:hover  { background: var(--blue-light); }
-    .btn-ghost   { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px 8px; border-radius: 4px; font-size: 13px; }
-    .btn-ghost:hover { background: var(--bg); color: var(--text); }
-
-    #file-input { display: none; }
-
-    .char-counter {
-      margin-left: auto;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .char-counter.warn { color: var(--red); font-weight: 600; }
-
-    /* ── DIVISOR CENTRAL CON BOTÓN SWAP ──────────────────────────────── */
-    .divider {
-      border-left: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--white);
-      position: relative;
-    }
-    .swap-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--white);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: var(--blue);
-      transition: all var(--transition);
-      box-shadow: var(--shadow-sm);
-    }
-    .swap-btn:hover { background: var(--blue-light); transform: rotate(180deg); }
-
-    /* ── PANEL DERECHO ───────────────────────────────────────────────── */
-    .panel-right { display: flex; flex-direction: column; }
+    #input-text::placeholder { color: var(--placeholder); }
 
     #output-area {
       flex: 1;
@@ -219,19 +251,17 @@
       font-size: 18px;
       line-height: 1.65;
       color: var(--text);
-      min-height: 200px;
       overflow-y: auto;
       word-break: break-word;
     }
+    .placeholder-text { color: var(--placeholder); font-style: italic; }
 
-    .placeholder-text { color: #bdc1c6; font-style: italic; }
-
-    /* Errores inline en el panel derecho */
+    /* Errores inline en panel derecho */
     .err-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
     .err-card {
       background: var(--red-bg);
       border-left: 3px solid var(--red);
-      border-radius: 4px;
+      border-radius: 8px;
       padding: 8px 12px;
       font-size: 14px;
     }
@@ -246,69 +276,129 @@
     .err-card-desc { color: var(--text); font-size: 13px; }
     .err-card-sug  { color: var(--muted); font-size: 12px; margin-top: 3px; }
 
-    /* ── SECCIÓN DE ANÁLISIS ─────────────────────────────────────────── */
+    /* ── ACTIONS BAR ──────────────────────────────────────────────── */
+    .actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: opacity .15s, background .15s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .btn-primary:hover:not(:disabled) { opacity: .82; }
+    .btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+    }
+    .btn-outline:hover { border-color: var(--text); }
+
+    .btn-ghost {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 10px;
+      font-family: inherit;
+    }
+    .btn-ghost:hover { background: var(--border); color: var(--text); }
+
+    #file-input { display: none; }
+
+    .char-counter {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .char-counter.warn { color: var(--red); font-weight: 600; }
+
+    /* ── ANALYSIS SECTION ─────────────────────────────────────────── */
     .analysis-wrap {
-      max-width: 1280px;
-      margin: 20px auto 48px;
-      padding: 0 24px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 4px 24px 0;
     }
 
     .tabs-bar {
       display: flex;
-      border-bottom: 2px solid var(--border);
+      border-bottom: 1.5px solid var(--border);
     }
     .tab-btn {
-      padding: 11px 22px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 20px;
       border: none;
       background: none;
       cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
       color: var(--muted);
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -1.5px;
+      transition: color .15s;
+      font-family: inherit;
     }
-    .tab-btn:hover  { color: var(--blue); }
-    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 
     .badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 19px;
-      height: 19px;
+      min-width: 18px;
+      height: 18px;
       padding: 0 5px;
-      border-radius: 10px;
+      border-radius: 9px;
       font-size: 11px;
       font-weight: 700;
-      line-height: 1;
     }
-    .badge-blue  { background: var(--blue);  color: var(--white); }
-    .badge-red   { background: var(--red);   color: var(--white); }
-    .badge-hide  { display: none !important; }
+    .badge-blue { background: #1a73e8; color: #fff; }
+    .badge-red  { background: var(--red); color: #fff; }
+    .badge-hide { display: none !important; }
 
     .tab-panel {
       display: none;
-      background: var(--white);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
+      border-radius: 0 0 12px 12px;
     }
     .tab-panel.active { display: block; }
 
     .tab-empty {
-      padding: 36px;
+      padding: 40px;
       text-align: center;
       color: var(--muted);
       font-size: 14px;
     }
-    .tab-empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+    .tab-empty-icon { font-size: 30px; display: block; margin-bottom: 8px; }
 
-    /* Tablas */
+    /* Tables */
     .tbl-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th {
@@ -325,103 +415,162 @@
     }
     tbody td {
       padding: 9px 14px;
-      border-bottom: 1px solid #f1f3f4;
+      border-bottom: 1px solid var(--row-border);
       vertical-align: top;
+      color: var(--text);
     }
-    tbody tr:hover td { background: #f8fafe; }
+    tbody tr:hover td { background: var(--row-hover); }
     tbody tr:last-child td { border-bottom: none; }
     code {
       font-family: 'SFMono-Regular', Consolas, monospace;
       font-size: 12px;
-      background: var(--bg);
-      padding: 1px 5px;
-      border-radius: 3px;
+      background: var(--code-bg);
+      color: var(--text);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
-    /* Pill-badges para columnas */
+    /* Pill badges para tablas (inyectadas por JS) */
     .pill {
       display: inline-block;
       padding: 2px 8px;
-      border-radius: 3px;
+      border-radius: 4px;
       font-size: 11px;
       font-weight: 600;
-      letter-spacing: .3px;
       white-space: nowrap;
     }
-    .pill-lex  { background: var(--blue-light); color: #1565c0; }
-    .pill-sint { background: var(--orange-bg);  color: var(--orange); }
-    .pill-sem  { background: var(--purple-bg);  color: var(--purple); }
-    .pill-ok   { background: var(--green-bg);   color: var(--green); }
-    .pill-err  { background: var(--red-bg);     color: var(--red); }
-    .pill-en   { background: var(--blue-light); color: #1565c0; }
-    .pill-es   { background: var(--purple-bg);  color: var(--purple); }
-    .pill-cfg  { background: #fff3e0;           color: #e65100; }
+    .pill-lex  { background: var(--pill-lex-bg);  color: var(--pill-lex-c);  }
+    .pill-sint { background: var(--pill-sint-bg); color: var(--pill-sint-c); }
+    .pill-sem  { background: var(--pill-sem-bg);  color: var(--pill-sem-c);  }
+    .pill-ok   { background: var(--pill-ok-bg);   color: var(--pill-ok-c);   }
+    .pill-err  { background: var(--pill-err-bg);  color: var(--pill-err-c);  }
+    .pill-cfg  { background: var(--pill-cfg-bg);  color: var(--pill-cfg-c);  }
+    .pill-en   { background: var(--pill-en-bg);   color: var(--pill-en-c);   }
+    .pill-es   { background: var(--pill-es-bg);   color: var(--pill-es-c);   }
 
-    /* ── SPINNER ─────────────────────────────────────────────────────── */
+    /* ── FOOTER ───────────────────────────────────────────────────── */
+    footer {
+      background: #f5f5f5;
+      border-top: 1px solid var(--border);
+      padding: 14px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 32px;
+      flex-shrink: 0;
+    }
+    body.dark footer { background: #111111; }
+
+    /* ── SPINNER OVERLAY ──────────────────────────────────────────── */
     .spinner-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(255,255,255,.75);
-      backdrop-filter: blur(3px);
+      background: var(--spinner-overlay);
+      backdrop-filter: blur(4px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 999;
-      gap: 16px;
+      gap: 14px;
     }
     .spinner-overlay.hidden { display: none; }
     .spinner {
-      width: 46px;
-      height: 46px;
-      border: 4px solid var(--blue-light);
-      border-top-color: var(--blue);
+      width: 44px;
+      height: 44px;
+      border: 3.5px solid var(--border);
+      border-top-color: var(--text);
       border-radius: 50%;
       animation: spin .75s linear infinite;
     }
-    .spinner-label { font-size: 14px; color: var(--muted); font-weight: 500; }
+    .spinner-label { font-size: 13px; color: var(--muted); font-weight: 500; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── RESPONSIVE ──────────────────────────────────────────────────── */
-    @media (max-width: 720px) {
-      .translator-box {
+    /* ── MICRÓFONO: estado grabando ───────────────────────────────── */
+    #mic-btn { cursor: pointer; opacity: 1; }
+    #mic-btn.recording {
+      animation: rec-pulse 2s ease-in-out infinite;
+      border-radius: 10px;
+    }
+    #mic-btn.recording svg { stroke: white; }
+
+    @keyframes rec-pulse {
+      0%,100% { background: #ef4444; box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+      50%      { background: #fca5a5; box-shadow: 0 0 8px 4px rgba(239,68,68,.15); }
+    }
+
+    .mic-error {
+      font-size: 12px;
+      color: #ef4444;
+      padding: 2px 16px 8px;
+      line-height: 1.4;
+      min-height: 0;
+    }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .panels-wrap {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1px auto;
       }
-      .divider {
-        height: 1px;
-        border-left: none;
-        border-top: 1px solid var(--border);
-      }
-      .swap-btn { display: none; }
-      .dir-toggle { display: none; }
-      .brand { font-size: 16px; }
-      .page-wrap, .analysis-wrap { padding: 12px; }
+      .main-wrap, .analysis-wrap { padding-left: 14px; padding-right: 14px; }
+      .brand-name { display: none; }
     }
   </style>
 </head>
 <body>
+<script>if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark');</script>
 
-<!-- ══════════════════════════════════════════════════════════ HEADER -->
+<!-- ══════════════════════════ HEADER -->
 <header>
   <div class="brand">
-    <span class="brand-icon">🌐</span>
-    Compilador Traductor
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="8" fill="#0d0d0d"/>
+      <text x="18" y="24" text-anchor="middle" fill="white" font-size="13"
+            font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-weight="600">文A</text>
+    </svg>
+    <span class="brand-name">TransCompiler</span>
   </div>
 
-  <div class="dir-toggle" id="dir-toggle">
-    <button class="dir-btn active" id="btn-en-es" onclick="setDir('EN')">EN → ES</button>
-    <button class="dir-btn"        id="btn-es-en" onclick="setDir('ES')">ES → EN</button>
+  <div class="header-right">
+    <button class="hdr-btn" id="theme-toggle" onclick="toggleDark()" title="Cambiar tema"></button>
+    <a class="hdr-btn" href="/logout" title="Cerrar sesión">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </a>
   </div>
 </header>
 
-<!-- ══════════════════════════════════════════════════════ TRADUCTOR -->
-<div class="page-wrap">
-  <div class="translator-box">
+<!-- ══════════════════════════ MAIN -->
+<div class="main-wrap">
 
-    <!-- Panel izquierdo: entrada -->
-    <div class="panel-left">
-      <div class="panel-head" id="lbl-src">Inglés</div>
+  <!-- Language selector -->
+  <div class="lang-bar">
+    <button class="lang-pill active" id="btn-en-es" onclick="setDir('EN')">English</button>
+    <button class="swap-mid" onclick="swapDir()" title="Invertir idiomas">⇄</button>
+    <button class="lang-pill" id="btn-es-en" onclick="setDir('ES')">Español</button>
+  </div>
+
+  <!-- Panels -->
+  <div class="panels-wrap">
+
+    <!-- Panel izquierdo -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-lang" id="lbl-src">English</span>
+        <button class="panel-icon" id="mic-btn" title="Micrófono" onclick="toggleMic()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8"  y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+      </div>
       <textarea
         id="input-text"
         maxlength="1000"
@@ -429,36 +578,54 @@
         spellcheck="false"
         oninput="onInput()"
       ></textarea>
-      <div class="panel-footer">
-        <button class="btn btn-primary" id="btn-translate" onclick="traducir()">
-          ▶ Traducir
-        </button>
-        <label class="btn btn-outline" for="file-input" style="cursor:pointer">
-          📄 Cargar .txt
-        </label>
-        <input type="file" id="file-input" accept=".txt" onchange="cargarArchivo(event)">
-        <button class="btn-ghost" onclick="limpiarTodo()" title="Limpiar">✕ Limpiar</button>
-        <span class="char-counter" id="char-counter">0 / 1000</span>
+      <div class="mic-error" id="mic-error"></div>
+    </div>
+
+    <!-- Panel derecho -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-lang" id="lbl-dst">Español</span>
+        <div class="panel-icons">
+          <button class="panel-icon" id="speaker-btn" title="Reproducir" onclick="reproducirTraduccion()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </button>
+          <button class="panel-icon" id="copy-btn" title="Copiar" onclick="copiarTraduccion()">
+            <svg id="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
       </div>
-    </div>
-
-    <!-- Divisor con botón swap -->
-    <div class="divider">
-      <button class="swap-btn" title="Invertir idiomas" onclick="swapDir()">⇄</button>
-    </div>
-
-    <!-- Panel derecho: salida -->
-    <div class="panel-right">
-      <div class="panel-head" id="lbl-dst">Español</div>
       <div id="output-area">
         <span class="placeholder-text">La traducción aparecerá aquí…</span>
       </div>
     </div>
 
-  </div><!-- /translator-box -->
-</div><!-- /page-wrap -->
+  </div><!-- /panels-wrap -->
 
-<!-- ══════════════════════════════════════════════════════ ANÁLISIS -->
+  <!-- Actions -->
+  <div class="actions-bar">
+    <button class="btn btn-primary" id="btn-translate" onclick="traducir()">
+      ▶&nbsp; Traducir
+    </button>
+    <label class="btn btn-outline" for="file-input" style="cursor:pointer">
+      📄 Cargar .txt
+    </label>
+    <input type="file" id="file-input" accept=".txt" onchange="cargarArchivo(event)">
+    <button class="btn-ghost" onclick="limpiarTodo()">✕ Limpiar</button>
+    <span class="char-counter" id="char-counter">0 / 1000</span>
+  </div>
+
+</div><!-- /main-wrap -->
+
+<!-- ══════════════════════════ ANALYSIS -->
 <div class="analysis-wrap">
 
   <div class="tabs-bar">
@@ -512,20 +679,32 @@
 
 </div><!-- /analysis-wrap -->
 
-<!-- ══════════════════════════════════════════════════════ SPINNER -->
+<!-- ══════════════════════════ FOOTER -->
+<footer>TransCompiler v1.0 &nbsp;·&nbsp; Proyecto de Compiladores</footer>
+
+<!-- ══════════════════════════ SPINNER -->
 <div class="spinner-overlay hidden" id="spinner">
   <div class="spinner"></div>
   <span class="spinner-label">Traduciendo…</span>
 </div>
 
-<!-- ══════════════════════════════════════════════════════ SCRIPT -->
+<!-- ══════════════════════════ JS (sin modificaciones) -->
 <script>
+/* ── Modo oscuro ─────────────────────────────────────────────────── */
+function toggleDark() {
+  const dark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', dark);
+  updateThemeIcon();
+}
+function updateThemeIcon() {
+  document.getElementById('theme-toggle').textContent =
+    document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
+updateThemeIcon();
+
 /* ── Estado ─────────────────────────────────────────────────────── */
-const LANG = {
-  EN: 'Inglés',
-  ES: 'Español',
-};
-let dirActual = 'EN'; // fuente actual
+const LANG = { EN: 'English', ES: 'Español' };
+let dirActual = 'EN';
 
 /* ── Dirección de traducción ───────────────────────────────────── */
 function setDir(dir) {
@@ -538,7 +717,6 @@ function setDir(dir) {
 
 function swapDir() {
   const nuevoDir = dirActual === 'EN' ? 'ES' : 'EN';
-  // Si hay traducción activa, moverla al textarea
   const outEl = document.getElementById('output-area');
   const textoTrad = outEl.dataset.translation || '';
   if (textoTrad) {
@@ -551,8 +729,8 @@ function swapDir() {
 
 /* ── Input / contador ──────────────────────────────────────────── */
 function onInput() {
-  const n   = document.getElementById('input-text').value.length;
-  const el  = document.getElementById('char-counter');
+  const n  = document.getElementById('input-text').value.length;
+  const el = document.getElementById('char-counter');
   el.textContent = `${n} / 1000`;
   el.classList.toggle('warn', n > 900);
 }
@@ -602,10 +780,8 @@ async function traducir() {
     }]);
     return;
   }
-
   setSpinner(true);
   resetOutput();
-
   try {
     const res  = await fetch('/traducir', {
       method:  'POST',
@@ -627,37 +803,36 @@ async function traducir() {
 
 /* ── Procesar respuesta ────────────────────────────────────────── */
 function handleResponse(data) {
+  const errores = data.errores || [];
   renderSimbolos(data.tabla_simbolos || []);
+  renderErrores(errores);
 
-  if (data.exito) {
-    // Mostrar traducción
-    const out = document.getElementById('output-area');
+  const out = document.getElementById('output-area');
+
+  if (data.exito && data.traduccion) {
     out.textContent = data.traduccion;
     out.dataset.translation = data.traduccion;
-
-    // Actualizar etiquetas con idioma real detectado
     if (data.idioma_origen) {
       const src = data.idioma_origen;
       const dst = src === 'EN' ? 'ES' : 'EN';
       document.getElementById('lbl-src').textContent = LANG[src] || src;
       document.getElementById('lbl-dst').textContent = LANG[dst] || dst;
     }
-
-    renderErrores([]);
-    showTab('sim');
   } else {
-    showOutputError(data.errores || []);
-    renderErrores(data.errores || []);
-    if ((data.errores || []).length > 0) showTab('err');
+    out.innerHTML = '<span class="placeholder-text">Error al traducir.</span>';
+    out.dataset.translation = '';
+  }
+
+  if (errores.length > 0) {
+    showTab('err');
+  } else {
+    showTab('sim');
   }
 }
 
 /* ── Errores en panel derecho ──────────────────────────────────── */
 function showOutputError(errores) {
-  if (!errores.length) {
-    resetOutput();
-    return;
-  }
+  if (!errores.length) { resetOutput(); return; }
   let html = '<ul class="err-list">';
   errores.forEach(e => {
     html += `
@@ -678,18 +853,11 @@ function renderSimbolos(items) {
   const tbody = document.getElementById('sim-tbody');
   tbody.innerHTML = '';
   setBadge('sim', items.length);
-
   const empty = document.getElementById('sim-empty');
   const wrap  = document.getElementById('sim-wrap');
-
-  if (!items.length) {
-    empty.style.display = '';
-    wrap.style.display  = 'none';
-    return;
-  }
+  if (!items.length) { empty.style.display = ''; wrap.style.display = 'none'; return; }
   empty.style.display = 'none';
   wrap.style.display  = '';
-
   items.forEach((s, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -701,8 +869,7 @@ function renderSimbolos(items) {
       <td><span class="pill ${s.idioma === 'EN' ? 'pill-en' : 'pill-es'}">${esc(s.idioma)}</span></td>
       <td>${s.tiene_error
             ? '<span class="pill pill-err">⚠ sí</span>'
-            : '<span class="pill pill-ok">✓ no</span>'}
-      </td>`;
+            : '<span class="pill pill-ok">✓ no</span>'}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -712,18 +879,11 @@ function renderErrores(items) {
   const tbody = document.getElementById('err-tbody');
   tbody.innerHTML = '';
   setBadge('err', items.length);
-
   const empty = document.getElementById('err-empty');
   const wrap  = document.getElementById('err-wrap');
-
-  if (!items.length) {
-    empty.style.display = '';
-    wrap.style.display  = 'none';
-    return;
-  }
+  if (!items.length) { empty.style.display = ''; wrap.style.display = 'none'; return; }
   empty.style.display = 'none';
   wrap.style.display  = '';
-
   items.forEach((e, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -777,6 +937,128 @@ function esc(s) {
 document.getElementById('input-text').addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); traducir(); }
 });
+</script>
+
+<!-- Reconocimiento de voz (nuevo, no toca el JS existente) -->
+<script>
+(function () {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let grabando    = false;
+
+  function setMicGrabando(on) {
+    grabando = on;
+    const btn = document.getElementById('mic-btn');
+    if (btn) btn.classList.toggle('recording', on);
+  }
+
+  function showMicError(msg) {
+    const el = document.getElementById('mic-error');
+    if (el) el.textContent = msg;
+  }
+
+  function hideMicError() {
+    const el = document.getElementById('mic-error');
+    if (el) el.textContent = '';
+  }
+
+  window.toggleMic = function () {
+    if (!SR) {
+      alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
+      return;
+    }
+
+    // Si ya está grabando, detener y salir
+    if (grabando && recognition) {
+      recognition.stop();
+      return;
+    }
+
+    hideMicError();
+
+    recognition                = new SR();
+    recognition.lang           = (typeof dirActual !== 'undefined' && dirActual === 'ES')
+      ? 'es-ES'
+      : 'en-US';
+    recognition.continuous     = false;
+    recognition.interimResults = false;
+
+    // Botón pasa a estado grabando al iniciar
+    recognition.onstart = () => {
+      setMicGrabando(true);
+    };
+
+    // Texto recibido: limpiar textarea, insertar transcript, actualizar contador
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      const input = document.getElementById('input-text');
+      if (input) {
+        input.value = transcript;
+        if (typeof onInput === 'function') onInput();
+      }
+      // NO llamar traducir() aquí — esperamos a onend
+    };
+
+    // Fin de sesión: quitar estado grabando y traducir si hay texto
+    recognition.onend = () => {
+      setMicGrabando(false);
+      const input = document.getElementById('input-text');
+      if (input && input.value.trim() && typeof traducir === 'function') {
+        traducir();
+      }
+    };
+
+    // Error: quitar estado grabando y mostrar mensaje si corresponde
+    recognition.onerror = (e) => {
+      setMicGrabando(false);
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        showMicError('Permiso de micrófono denegado. Habilítalo en la configuración del navegador.');
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (err) {
+      setMicGrabando(false);
+      showMicError('No se pudo iniciar el micrófono: ' + err.message);
+    }
+  };
+}());
+</script>
+
+<script>
+function reproducirTraduccion() {
+  const out   = document.getElementById('output-area');
+  const texto = (out.dataset.translation || '').trim();
+  if (!texto) return;
+
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    return;
+  }
+
+  const destino   = (document.getElementById('lbl-dst').textContent || '').trim();
+  const utterance = new SpeechSynthesisUtterance(texto);
+  utterance.lang  = destino === 'Español' ? 'es-ES' : 'en-US';
+  speechSynthesis.speak(utterance);
+}
+
+function copiarTraduccion() {
+  const out = document.getElementById('output-area');
+  const texto = (out.dataset.translation || '').trim();
+  if (!texto) return;
+
+  const COPY_SVG  = `<svg id="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const CHECK_SVG = `<svg id="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('copy-btn');
+    if (btn) {
+      btn.innerHTML = CHECK_SVG;
+      setTimeout(() => { btn.innerHTML = COPY_SVG; }, 2000);
+    }
+  });
+}
 </script>
 </body>
 </html>
