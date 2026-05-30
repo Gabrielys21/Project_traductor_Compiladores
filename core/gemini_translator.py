@@ -27,7 +27,7 @@ except ImportError:
 
 # ── Constantes ───────────────────────────────────────────────────────────────
 
-_MODELO_ID = "gemini-2.5-flash"
+_MODELO_ID = "gemini-2.5-flash-lite"
 
 # Mapas de idioma para mensajes y lógica de dirección
 _NOMBRE_IDIOMA: dict[str, str] = {'EN': 'inglés', 'ES': 'español'}
@@ -116,7 +116,9 @@ class GeminiTranslator:
             resultado['traduccion'] = respuesta.text.strip()
             resultado['exito']      = True
         except Exception as exc:
-            resultado['error'] = str(exc)
+            import traceback
+            resultado['error']   = str(exc)
+            resultado['detalle'] = traceback.format_exc()
 
         return resultado
 

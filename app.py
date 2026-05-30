@@ -153,6 +153,10 @@ def traducir():
     resultado = translator.traducir(texto, tokens, lexer.idioma)
 
     if not resultado['exito']:
+        print("GEMINI ERROR:", resultado.get('error'))
+        print("DETALLE:", resultado.get('detalle'))
+
+    if not resultado['exito']:
         return jsonify({
             'exito':          False,
             'errores':        tabla_err.to_list(),
