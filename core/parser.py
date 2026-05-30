@@ -71,15 +71,15 @@ class NodoAST:
         nodo['hijos'] = [h.to_dict() for h in self.hijos]
         return nodo
 
-    def imprimir(self, nivel: int = 0, es_ultimo: bool = True) -> None:
+    def imprimir(self, nivel: int = 0, es_ultimo: bool = True, prefijo: str = '') -> None:
         rama   = '└── ' if es_ultimo else '├── '
-        indent = '│   ' * nivel
-        if self.token is not None:
-            print(f"{indent}{rama}{self.etiqueta}: '{self.token.valor}' [{self.token.tipo.name}]")
-        else:
-            print(f"{indent}{rama}{self.etiqueta}")
+        label  = (f"{self.etiqueta}: '{self.token.valor}' [{self.token.tipo.name}]"
+                  if self.token is not None else self.etiqueta)
+        print(f"{prefijo}{rama}{label}")
+        # Continuar la línea vertical solo si el nodo padre no era el último
+        extension = '    ' if es_ultimo else '│   '
         for i, hijo in enumerate(self.hijos):
-            hijo.imprimir(nivel + 1, i == len(self.hijos) - 1)
+            hijo.imprimir(nivel + 1, i == len(self.hijos) - 1, prefijo + extension)
 
 
 # ── Clase Parser ─────────────────────────────────────────────────────────────

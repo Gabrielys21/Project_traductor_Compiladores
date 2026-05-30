@@ -637,6 +637,9 @@
       Tabla de errores
       <span class="badge badge-red badge-hide" id="bdg-err">0</span>
     </button>
+    <button class="tab-btn" id="tbtn-ast" onclick="showTab('ast')">
+      Árbol de Derivación
+    </button>
   </div>
 
   <!-- Tab: símbolos -->
@@ -674,6 +677,25 @@
         </thead>
         <tbody id="err-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Tab: árbol de derivación -->
+  <div class="tab-panel" id="tpanel-ast">
+    <div class="tab-empty" id="ast-empty">
+      <span class="tab-empty-icon">🌳</span>
+      Realiza una traducción para ver el árbol de derivación.
+    </div>
+    <div id="ast-wrap" style="display:none; overflow-x:auto">
+      <pre id="ast-pre" style="
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        padding: 16px 20px;
+        color: var(--text);
+        background: var(--surface);
+        margin: 0;
+      "></pre>
     </div>
   </div>
 
@@ -806,6 +828,7 @@ function handleResponse(data) {
   const errores = data.errores || [];
   renderSimbolos(data.tabla_simbolos || []);
   renderErrores(errores);
+  renderArbol(data.arbol_ast || null);
 
   const out = document.getElementById('output-area');
 
@@ -818,15 +841,15 @@ function handleResponse(data) {
       document.getElementById('lbl-src').textContent = LANG[src] || src;
       document.getElementById('lbl-dst').textContent = LANG[dst] || dst;
     }
+    showTab('ast');
   } else {
     out.innerHTML = '<span class="placeholder-text">Error al traducir.</span>';
     out.dataset.translation = '';
-  }
-
-  if (errores.length > 0) {
-    showTab('err');
-  } else {
-    showTab('sim');
+    if (errores.length > 0) {
+      showTab('err');
+    } else {
+      showTab('sim');
+    }
   }
 }
 
@@ -899,10 +922,43 @@ function renderErrores(items) {
 
 /* ── Tabs ──────────────────────────────────────────────────────── */
 function showTab(tab) {
-  ['sim', 'err'].forEach(t => {
+  ['sim', 'err', 'ast'].forEach(t => {
     document.getElementById(`tbtn-${t}`).classList.toggle('active', t === tab);
     document.getElementById(`tpanel-${t}`).classList.toggle('active', t === tab);
   });
+}
+
+/* ── Árbol de derivación ───────────────────────────────────────── */
+function renderArbol(nodo) {
+  const empty = document.getElementById('ast-empty');
+  const wrap  = document.getElementById('ast-wrap');
+  const pre   = document.getElementById('ast-pre');
+
+  if (!nodo) {
+    empty.style.display = '';
+    wrap.style.display  = 'none';
+    return;
+  }
+
+  function construir(n, prefijo, esUltimo) {
+    const rama   = esUltimo ? '└── ' : '├── ';
+    const label  = n.token
+      ? `${n.etiqueta}: '${n.token.valor}' [${n.token.tipo}]`
+      : n.etiqueta;
+    let lineas = [prefijo + rama + label];
+    const ext  = esUltimo ? '    ' : '│   ';
+    (n.hijos || []).forEach((hijo, i) => {
+      lineas = lineas.concat(
+        construir(hijo, prefijo + ext, i === n.hijos.length - 1)
+      );
+    });
+    return lineas;
+  }
+
+  const lineas = construir(nodo, '', true);
+  pre.textContent = lineas.join('\n');
+  empty.style.display = 'none';
+  wrap.style.display  = '';
 }
 
 function setBadge(tab, n) {

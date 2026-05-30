@@ -161,6 +161,7 @@ def traducir():
             'exito':          False,
             'errores':        tabla_err.to_list(),
             'tabla_simbolos': tabla_simbolos,
+            'arbol_ast':      arbol.to_dict(),
         })
 
     return jsonify({
@@ -169,6 +170,7 @@ def traducir():
         'idioma_origen':  lexer.idioma,
         'tabla_simbolos': tabla_simbolos,
         'errores':        tabla_err.to_list(),
+        'arbol_ast':      arbol.to_dict(),
     })
 
 
